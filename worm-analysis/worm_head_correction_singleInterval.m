@@ -1,0 +1,284 @@
+clear
+close all
+clc
+
+%% Written by H Xiao
+% First, load the images into ImageJ
+% Identify good intervals
+% Peform corrections here
+
+%% 
+datapath = 'E:\Worm\glass_beads\111524_data';
+dpath = dir(datapath);
+dpath(1:2) = [];
+
+data_subsets = [10];
+
+%%
+for id = data_subsets
+    % id = 1;
+    savepath = fullfile(datapath,dpath(id).name)
+    predict_folder = fullfile(savepath,'predict_images');
+    % result_folder = fullfile(savepath,'predictions');
+    % wormimg_folder = fullfile(savepath,'worm_images');
+    % read the modified position with worm's position
+
+    % filename = 'W1GlassBead_10';
+    prefix = dpath(id).name(1:end-4);
+    % Extract the part before the first underscore
+    % prefix = regexp(filename, '.*(?=_)', 'match', 'once');
+    % disp(prefix); % Output: W1GlassBead
+    
+
+    T = readtable(fullfile(savepath,'raw_data.csv'),'NumHeaderLines',1);
+    % T_index = 1:13;
+    T_index = [1,3:13];
+    T_mat=table2array(T(:,T_index));
+    T_mat(:,1) = T_mat(:,1)+1;
+
+    imnames = dir(predict_folder);
+    imnames(1:2) = [];
+    len = length(imnames);
+
+    particles = cell(len,1);
+    
+    head_pos = [1 1];
+    flip_flag_total = zeros(len,2); % [flip head, multiple worm]
+
+    % read the interval file
+    I = readtable(fullfile(savepath,'intervals.csv'),'NumHeaderLines',1);
+    Num_intervals = size(I,1);
+        
+    I_index = [1,2,3];
+    I_mat=table2array(I(:,I_index));
+    % I_mat(:,[1,2])=I_mat(:,[1,2])+1; % only needed if the image numbers
+    % start from 1
+
+    downsamp = 1;
+
+    %%
+    for i_interval = 1:Num_intervals
+    % for i_interval = 1
+
+        interval_range = I_mat(i_interval,1):I_mat(i_interval,2);
+        flip_flag = zeros(length(interval_range),2);
+
+        % debug_frames = [1090:1110]
+        % debug_frames = [1510:1520];
+        debug_frames = [ ];
+
+        idx = 0;
+    
+        for i = interval_range
+
+            idx = idx+1;
+            i
+            
+            % check if the frame is in the good intervals
+            Interval_idx = find(I_mat(:,1)<=i,1,'last');
+    
+            % load frame image and worm info
+            imagename = sprintf('_%d.tif',i);
+            % imagename = sprintf([prefix, '_%d.tif'],i);
+            im = imread(fullfile(predict_folder,imagename));
+            trackID = find(T_mat(:,1)==i);
+            T_i = T_mat(trackID,:);
+
+            % skip if this frame has misidentified worm with all coords
+            % being zero
+            if T_i(3)==0
+                flip_flag(idx,2) = nan;
+                continue;
+            end
+    
+            % skip if there is more than one worm or no worm----------------------------------
+            % num_worms = size(T_i,1);
+            % % flip_flag(idx,2) = num_worms;
+            % if num_worms ~= 1 || anynan(T_i) 
+            %     if(num_worms ~= 1)
+            %       flip_flag(idx,2) = nan;
+            %     end
+            %     continue
+            % end
+
+            j=1;
+    
+            % read worm positions----------------------------------
+            WlistX = [4,6,8,10,12];
+            WlistY = [3,5,7,9,11];
+    
+            % just for the first frame, mannualy tell if we want to flip----------------------------------
+            if (i==I_mat(Interval_idx,1))
+                figure(1)
+                imshow(im)
+                hold on
+                X_pos = T_i(j,WlistX);
+                Y_pos = T_i(j,WlistY);
+                plot(X_pos(1),Y_pos(1),'o r','markerfacecolor','r')
+    
+                val = input('type 0 if it is wrong, type 1 if it is correct: ');
+                % disp(['You entered: ', num2str(val)]);
+                flip_flag(idx,1) = val;
+                if flip_flag(idx,1) == 0
+                    head_pos = [T_i(j,WlistX(end)),T_i(j,WlistY(end))];
+                else
+                    head_pos = [T_i(j,WlistX(1)),T_i(j,WlistY(1))];
+                end
+                continue
+            else
+
+                % check if the previous frame has no tracked position, if
+                % so, we will manually check this frame
+                nanflag = isnan(flip_flag(idx-1,2));
+            
+            end
+
+            flip_flag(idx,1) = flip_flag(idx-1,1);
+            if flip_flag(idx,1) == 1
+                 WlistX = fliplr(WlistX);
+                 WlistY = fliplr(WlistY);
+            end
+            % compare with previous frame----------------------------------
+            dist_H = sqrt((head_pos(1)-T_i(1,WlistX(1)))^2 + (head_pos(2)-T_i(1,WlistY(1)))^2); % compare head to previous head
+            dist_T = sqrt((head_pos(1)-T_i(1,WlistX(end)))^2 + (head_pos(2)-T_i(1,WlistY(end)))^2); % compare tail to previous head
+    
+            if dist_H>dist_T % if the previous head is closer to the current tail, then flip
+               WlistX = fliplr(WlistX);
+               WlistY = fliplr(WlistY);
+               flip_flag(idx,1) = 1-flip_flag(idx,1);
+            end
+    
+            dist_HT = sqrt((T_i(1,WlistX(end))-T_i(1,WlistX(1)))^2 + (T_i(1,WlistY(end))-T_i(1,WlistY(1)))^2);
+            X_pos = T_i(j,WlistX);
+            Y_pos = T_i(j,WlistY);
+    
+            % if nanflag || dist_HT <100 || ismember(i,debug_frames)
+            if dist_HT <100 || ismember(i,debug_frames)
+
+                message_check = sprintf('nanflag = %d, head-tail too small= %d, is debug frame = %d',nanflag, dist_HT <100, ismember(i,debug_frames));
+                disp(message_check)
+
+                figure(1)
+                imshow(im)
+                hold on
+                plot(X_pos,Y_pos,'o- y','markerfacecolor','y')
+                plot(head_pos(1),head_pos(2),'x b')
+                plot(X_pos(1),Y_pos(1),'o m','markerfacecolor','m')
+                val = input('type 0 if it is wrong: ');
+    
+                % disp(['You entered: ', num2str(val)]);
+                if val == 0
+                    % if the current flip is wrong, we change it
+                    flip_flag(idx,1) = 1-flip_flag(idx,1);
+                    % then we flip the pos to get correct Wlist
+                    WlistX = fliplr(WlistX);
+                    WlistY = fliplr(WlistY);
+                end
+    
+                % head_pos = [X_pos(end),Y_pos(end)];
+            end
+    
+            head_pos = [T_i(j,WlistX(1)),T_i(j,WlistY(1))];
+            plot(head_pos(1),head_pos(2),'o r','markerfacecolor','r')
+    
+            % 
+            titlename = sprintf("frame %d",i);
+            titlename = append(dpath(id).name, titlename);
+            text(50,50,titlename,'fontsize',16,'Color','w')
+            title(titlename)
+            hold off   
+    
+    
+        end
+
+        interval_name = sprintf('flip_flag_%d_%d.dat',I_mat(i_interval,1),I_mat(i_interval,2));
+        writematrix(flip_flag,fullfile(savepath,interval_name));
+  
+        %%
+        % savepath_ = 
+        downsamp = 5;
+        % vidname = '_wormTrack.mp4';
+        vidname = sprintf('_worm_%d_%d.mp4',I_mat(i_interval,1),I_mat(i_interval,2));
+        v = VideoWriter(fullfile(savepath,[dpath(id).name, vidname]),'MPEG-4');    
+        v.Quality = 75;  
+        v.FrameRate = 5;
+        open(v)
+    
+        idx = 0;
+        for i = interval_range
+    
+            idx = idx+1;    
+            Interval_idx = find(I_mat(:,1)<=i,1,'last');
+            if isempty(Interval_idx) || i>I_mat(Interval_idx,2)
+                % flip_flag(idx,2) = nan;
+                continue
+            end
+
+            if mod(idx,downsamp)~=0
+
+                continue
+
+            end
+    
+            
+            i
+            imagename = sprintf(['_%d.tif'],i);
+            % imagename = sprintf([prefix, '_%d.tif'],i);
+            im = imread(fullfile(predict_folder,imagename));
+    
+            trackID = find(T_mat(:,1)==i);
+            T_i = T_mat(trackID,:);
+    
+            num_worms = size(T_i,1);
+            
+            figure(1)
+            imshow(im)
+            hold on
+     
+            j = 1;
+            WlistX = [4,6,8,10,12];
+            WlistY = [3,5,7,9,11];
+            if flip_flag(idx,1) == 1
+                 WlistX = fliplr(WlistX);
+                 WlistY = fliplr(WlistY);
+            end
+    
+            X_pos = T_i(j,WlistX);
+            Y_pos = T_i(j,WlistY);
+            plot(X_pos,Y_pos,'o- y','markerfacecolor','y')
+            plot(X_pos(1),Y_pos(1),'o m','markerfacecolor','m')   
+    
+            titlename = sprintf("frame %d",i);
+            titlename = append(dpath(id).name, titlename);
+            text(50,50,titlename,'fontsize',16,'Color','w')
+            title(titlename)
+            hold off   
+            frame = getframe(gcf); % Capture the current figure
+            writeVideo(v, frame);  % Write to video
+    
+        end
+    
+        close(v)
+
+    end
+
+    %%
+    % writematrix(flip_flag,fullfile(savepath,'flip_flag_singleframe.dat'));
+
+    % %%
+    % for i_interval = 1:Num_intervals
+    % 
+    %     interval_range = I_mat(i_interval,1):I_mat(i_interval,2);
+    %     interval_name = sprintf('flip_flag_%d_%d.dat',I_mat(i_interval,1),I_mat(i_interval,2));
+    %     flip_flag = readmatrix(fullfile(savepath,interval_name));
+    %     flip_flag_total(interval_range,:) = flip_flag;
+    % 
+    % end
+    % 
+    % writematrix(flip_flag_total,fullfile(savepath,'flip_flag_singleframe.dat'));
+    
+
+end
+
+
+%%
