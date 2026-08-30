@@ -1,6 +1,6 @@
 # Worm kinematic data extraction
 
-<video src="WormParticles45um-3.5-naive4A_worm_430_630.mp4" width="100%" controls></video>
+https://github.com/user-attachments/assets/fc90da60-c96c-4162-989c-0670478d4b29
 
 This sub-package reads the segmented video and use Python libraries to derive specific parameters of the worm's kinematics. From the segemented mask of each worm, we identify five nodes alongside its body, which can be used for subsequent analysis.
 
