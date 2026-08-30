@@ -1,9 +1,9 @@
 # Tracking-worm-in-granular-environments
-A package for analyzing a moving slender object in a quasi-2D granular environment. 
+A package for analyzing a moving slender object in a quasi-2D granular environment collaboratively by the groups of Eleni Gourgou at Wayne State University and Hongyi Xiao at University of Michigan. This package is developed for the analysis in the research manuscript "Xiao, H., Maleki, S., Pan, Y., Smith, A., & Gourgou, E. (2026). Behavioural plasticity in Caenorhabditis elegans navigating dynamic granular environments. bioRxiv, 2026-05."
 
-More specifically, we include four sets of code that could be executed according to the sequence below:
+We include four sets of code that could be executed according to the sequence below:
 
-(1) A Python-based, neural-network based method to segment a worm from 2D images or videos. Example training images and a video are included along with the source code.
+(1) A Python-based, neural-network based method to segment a worm from 2D images or videos. Example training images and a video are included along with the source code. 
 
 (2) A set of Python code to utilize segmented worm images to extract positional information of the worm as a function of time.
 
