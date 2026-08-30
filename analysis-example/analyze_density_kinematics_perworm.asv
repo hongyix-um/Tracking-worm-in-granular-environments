@@ -1,4 +1,4 @@
-%% This code reads the worm and particle segmentation outputs and calculate the speed and direction of a worm's motion along with the densities of the surrounding particles in each frame.
+%% This code reads the worm and particle segmentation outputs and calculate a worm's
 
 clear
 close all
