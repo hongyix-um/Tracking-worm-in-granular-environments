@@ -1,6 +1,6 @@
-# ML-based Worm Segmentation Toolbox
+# Worm kinematic data extraction
 
-![sample_output](https://github.com/Pyh2002/Worm-Segmentation-ToolBox/assets/72658879/9876febd-ae4c-47bd-afee-9f3f7c387a06)
+![sample_output](https://github.com/hongyix-um/Tracking-worm-in-granular-environments/blob/main/worm-analysis/WormParticles45um-3.5-naive4A_worm_430_630.mp4)
 
 This sub-package reads the segmented video and use Python libraries to derive specific parameters of the worm's kinematics. From the segemented mask of each worm, we identify five nodes alongside its body, which can be used for subsequent analysis.
 
