@@ -2,11 +2,11 @@
 
 ![sample_output](https://github.com/Pyh2002/Worm-Segmentation-ToolBox/assets/72658879/9876febd-ae4c-47bd-afee-9f3f7c387a06)
 
-This toolbox is a worm tracker developed in [Eleni Gourgou's Lab](https://elenigourgou.engin.umich.edu/) at the University of Michigan, Ann Arbor. The project was primarily developed by Yuheng Pan and Adam Smith, under the supervision of Eleni Gourgou and her collaborator, Hongyi Xiao. It draws inspiration from the [tierpsy-tracker](https://github.com/Tierpsy/tierpsy-tracker) and Hongyi Xiao's [Bellybutton segmentation](https://pypi.org/project/bellybuttonseg/).
+This sub-package reads the segmented video and use Python libraries to derive specific parameters of the worm's kinematics. From the segemented mask of each worm, we identify five nodes alongside its body, which can be used for subsequent analysis.
 
-Our main goal is to track worms in more complex environments, particularly when the worm is surrounded by granular matter. The tool employs machine learning methods to track the worm, creating a binary mask over the worm, and uses Python libraries to derive specific parameters from the binary masked videos.
+The main file to check and execute is "unitool.py".
 
-## Installation Instructions
+As of now, the most useful output is "raw_data.csv", which contains the identified nodal position in unit of pixels for each frame. Although additional information is also written, but the corresponding functions are in a testing stage. For the research manuscript, we wrote separate MATLAB code to directly analyze worm kinematics based on the nodal positions of the worm.  
 
-### Binary mask generation
+As a worm can exist in a complicated environment, the head/tail distinguishment can be challenging, and the result in "raw_data.csv" needs to be corrected. For each video segment, we can mannualy identify the worm's head node in the first frame, and use an proximity-based criterion to identify the head node in the subsequent frames. An example code in MATLAB is attached here, although it will require the video to be converted to images first. A intervals.csv file can also be created for a user to specify which frame intervals of interest should be corrected.  
 

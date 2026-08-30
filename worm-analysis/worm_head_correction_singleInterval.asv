@@ -1,4 +1,4 @@
-%% This code can be used to mannualy correct the mis-identification of the worm head
+%% Written by H Xiao
 % First, load the images into ImageJ
 % Identify good intervals
 % Peform corrections here
