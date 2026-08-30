@@ -10,3 +10,10 @@ We include four sets of code that could be executed according to the sequence be
 (3) A python-based code, utilizing an existing package (Bellybutton) to segment the particles in the same set of images. A region of interest can be set according to the identified worm position, so that only particles near the worm will be tracked.
 
 (4) Example analysis code to utilize the above information. The code pieces can be used to further develop analysis such as worm speed vs. nearby particle density.
+
+
+
+https://github.com/user-attachments/assets/0c115574-5c94-4b22-b51a-0aa687796db7
+
+
+
