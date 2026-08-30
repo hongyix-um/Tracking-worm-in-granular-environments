@@ -1,0 +1,234 @@
+clear
+close all
+clc
+
+%% particle information
+mdia = 20;
+s_rad = 5;
+downsamp = 10;
+
+%% two locations need to be changed between trial2&3 and trial4-6
+% datapath = './plastic_beads/Trial6_data';
+% dpath = dir(datapath);
+% dpath(1:2) = [];
+% data_subsets = [4,7,8]; %trial 6 worm 2
+% filename_save = './result_density_kinematics/plastic/trial_6_2.dat';
+% data_subsets = [9:11]; %trial 6 worm 3
+% filename_save = './result_density_kinematics/plastic/trial_6_3.dat';
+% data_subsets = [12:16]; %trial 6 worm 4
+% filename_save = './result_density_kinematics/plastic/trial_6_4.dat';
+% data_subsets = [17:18]; %trial 6 worm 5
+% filename_save = './result_density_kinematics/plastic/trial_6_5.dat';
+% data_subsets = [19:20]; %trial 6 worm 6
+% filename_save = './result_density_kinematics/plastic/trial_6_6.dat';
+
+%%
+   % vidname = 'worm_particles_trial6.mp4';
+   % v = VideoWriter(vidname,'MPEG-4');
+   % v.Quality = 75;  
+   % v.FrameRate = 6;
+   % open(v)
+
+%%
+% for id = 2:length(dpath)
+worm_density = [];
+
+for id = data_subsets
+    % id = 1;
+    savepath = fullfile(datapath,dpath(id).name)
+
+    predict_folder = fullfile(savepath,'predict_images');
+    result_folder = fullfile(savepath,'predictions');
+
+    % read the modified position with worm's position
+
+    T = readtable(fullfile(savepath,'raw_data.csv'),'NumHeaderLines',1);
+    T_index = [1,3:13]; 
+    T_mat=table2array(T(:,T_index));
+    T_mat(:,1) = T_mat(:,1)+1;    
+
+    % read the interval file
+    I = readtable(fullfile(savepath,'intervals.csv'),'NumHeaderLines',1);
+    % I_index = [1,2,3,5];
+    I_index = [1,2];
+    I_mat=table2array(I(:,I_index));
+    I_mat(:,[1,2])=I_mat(:,[1,2])+1;
+
+    flip_flag = readmatrix(fullfile(savepath,'flip_flag_singleframe.dat'));
+
+    a_collect = [];
+
+    imnames = dir(predict_folder);
+
+    max_frame = max(I_mat(:,2))-1;
+
+    frame_collection = downsamp:downsamp:max_frame;
+
+    len = length(frame_collection);
+    particles = cell(len,1);
+    idx = 0;
+
+    prefix = [];
+
+    for i = frame_collection
+
+        % check if the frame is in the good intervals
+        Interval_idx = find(I_mat(:,1)<=i,1,'last');
+        if isempty(Interval_idx) || i> (I_mat(Interval_idx,2)-50)
+            continue
+        end
+
+
+        imagename = sprintf([prefix, '_%d.tif'],i);
+        imagename_s = sprintf([prefix,'%d_binarized.png'],i);
+        im = imread(fullfile(predict_folder,imagename));
+        
+        im_result = imread(fullfile(result_folder,imagename_s));
+        im_result(im_result>0)=255;
+        [listX,listY] = find(im_result>0);
+        [listX_all,listY_all] = find(im_result>=0);
+
+        % find worm from tracked data
+        trackID = find(T_mat(:,1)==i);
+        T_i = T_mat(trackID,:); % worm information
+
+        num_worms = size(T_i,1);
+        if num_worms ~=1
+            continue
+        end
+
+        WlistX = [4,6,8,10,12];
+        WlistY = [3,5,7,9,11];
+        if flip_flag(i,1) == 1
+             WlistX = fliplr(WlistX);
+             WlistY = fliplr(WlistY);
+        end
+        X_pos = T_i(1,WlistX);
+        Y_pos = T_i(1,WlistY);
+
+        % calculate worm displacement information
+        disp_20 = nan;
+        disp_50 = nan;
+        disp_100 = nan;
+        ht_dist = nan;
+
+        % worm head to tail distance
+        if (X_pos(5)>0 && Y_pos(5)>0)
+          ht_dist = sqrt( (X_pos(5)-X_pos(1))^2 + (Y_pos(5)-Y_pos(1))^2 ); % head to tail distance
+        end
+        
+        X_pos_20 = nan(1,5);
+        % worm displacement over 20 frames
+        if (i+20<=I_mat(Interval_idx,2))
+         trackID_20 = find(T_mat(:,1)==i+20);
+         T_i_20 = T_mat(trackID_20,:);
+         WlistX = [4,6,8,10,12];
+         WlistY = [3,5,7,9,11];
+         if flip_flag(i+20,1) == 1
+          WlistX = fliplr(WlistX);
+          WlistY = fliplr(WlistY);
+         end
+         X_pos_20 = T_i_20(1,WlistX);
+         Y_pos_20 = T_i_20(1,WlistY);
+        if (X_pos_20(3)>0 && X_pos(3)>0)
+           disp_20 = sqrt( (X_pos_20(3) - X_pos(3)).^2 + (Y_pos_20(3) - Y_pos(3)).^2 );
+        end
+        end
+
+        X_pos_100 = nan(1,5);
+        % worm displacement over 100 frames
+        if (i+100<=I_mat(Interval_idx,2))
+         trackID_100 = find(T_mat(:,1)==i+100);
+         T_i_100 = T_mat(trackID_100,:);
+         WlistX = [4,6,8,10,12];
+         WlistY = [3,5,7,9,11];
+         if flip_flag(i+100,1) == 1
+          WlistX = fliplr(WlistX);
+          WlistY = fliplr(WlistY);
+         end
+         X_pos_100 = T_i_100(1,WlistX);
+         Y_pos_100 = T_i_100(1,WlistY);
+        if (X_pos_100(3)>0 && X_pos(3)>0)
+           disp_100 = sqrt( (X_pos_100(3) - X_pos(3)).^2 + (Y_pos_100(3) - Y_pos(3)).^2 );
+        end
+        end
+
+        X_pos_50 = nan(1,5);
+        % worm displacement over 50 frames
+        if (i+50<=I_mat(Interval_idx,2))
+         trackID_50 = find(T_mat(:,1)==i+50);
+         T_i_50 = T_mat(trackID_50,:);
+         WlistX = [4,6,8,10,12];
+         WlistY = [3,5,7,9,11];
+         if flip_flag(i+50,1) == 1
+          WlistX = fliplr(WlistX);
+          WlistY = fliplr(WlistY);
+         end
+         X_pos_50 = T_i_50(1,WlistX);
+         Y_pos_50 = T_i_50(1,WlistY);
+        if (X_pos_50(3)>0 && X_pos(3)>0)
+           disp_50 = sqrt( (X_pos_50(3) - X_pos(3)).^2 + (Y_pos_50(3) - Y_pos(3)).^2 );
+        end
+        end
+
+        if X_pos_50(3)==0 || X_pos_20(3)==0 || X_pos_100(3)==0 || X_pos(3)==0
+            continue
+        end
+
+        figure(1)
+        imshowpair(im,im_result)
+        % imshow(im)
+        hold on
+        plot(X_pos,Y_pos,'o b','markerfacecolor','b')
+        plot(X_pos(1),Y_pos(1),'o r','markerfacecolor','r')
+        plot(X_pos(2),Y_pos(2),'o b','markerfacecolor','b')
+        quiver(X_pos(2), Y_pos(2), (X_pos(1)-X_pos(2)), (Y_pos(1)-Y_pos(2)), 0, 'MaxHeadSize', 1.0, 'LineWidth', 2,'Color','m');
+        
+        disp_X = X_pos_50(3) - X_pos(3);
+        disp_Y = Y_pos_50(3) - Y_pos(3);
+        figure(1)
+        quiver(X_pos(3), Y_pos(3), disp_X, disp_Y, 0, 'MaxHeadSize', 1.0, 'LineWidth', 2,'Color','g'); 
+
+        p_i = disp_X*(X_pos(1)-X_pos(2)) + disp_Y*(Y_pos(1)-Y_pos(2));
+
+        worm_stat_i = [id i disp_20 disp_50 disp_100 ht_dist p_i];
+
+        for iworm = 1:5
+            dist_p = sqrt( (listY-X_pos(iworm)).^2 + (listX-Y_pos(iworm)).^2 );
+            dist_all = sqrt( (listY_all-X_pos(iworm)).^2 + (listX_all-Y_pos(iworm)).^2 );
+
+            p_index = find(dist_p<s_rad*mdia);
+            p_index_all = find(dist_all<s_rad*mdia);
+
+            % figure(1)
+            % hold on
+            % scatter(listY(p_index),listX(p_index),'. y','markeredgealpha',0.5)
+
+            density_p = length(p_index)/length(p_index_all);
+            worm_stat_i = [worm_stat_i density_p];
+
+        end
+
+        worm_density = [worm_density ; worm_stat_i];
+
+    end
+
+end
+
+writematrix(worm_density,filename_save);
+
+%% quick checks
+figure(11)
+h = histogram(worm_density(:,7),-50000:2000:50000, 'Normalization', 'pdf');
+hold off;  % Don't plot the histogram visually
+% Extract bin centers and pdf values from 'h'
+bin_centers_H = h.BinEdges(1:end-1) + diff(h.BinEdges)/2;
+pdf_values_H = h.Values;
+figure(12);
+plot(bin_centers_H, pdf_values_H,'o', 'LineWidth', 2, 'Color', 'm');
+hold on
+
+pd = fitdist(worm_density(:,7), 'Normal');
+x_values = -50000:2000:50000;
+y_pdf = pdf(pd, x_values);
+plot(x_values, y_pdf, 'k', 'LineWidth', 2);
