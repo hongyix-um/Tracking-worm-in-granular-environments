@@ -1,0 +1,21 @@
+[Parameters]
+s_half = 12
+scales = 4
+scalefactor = 2
+batch_size = 1024
+rotations = 1
+flips = 1
+images_to_grayscale = 1
+train_epochs = 3
+fraction = 0.3
+balance_classes = 1
+dist_max = 10
+track_outies = 0
+output_segmented = 1
+output_binarized = 0
+output_dist = 0
+output_classprob = 0
+output_markers = 0
+save_to_png = 1
+save_to_npy = 0
+
